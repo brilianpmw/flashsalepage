@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+
+  <link href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" rel="stylesheet">
+  <link href='https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons' rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <link href="http://cdn.materialdesignicons.com/5.4.55/css/materialdesignicons.min.css" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+
+<body>
+  <div id="app">
+    <v-app>
+      <v-container class="mt-5">
+        <v-card>
+          <template>
+            <v-data-table :headers="headers" :items="desserts" sort-by="calories" :loading="loadingTable"
+              loading-text="Please wait..." show-select v-model="selected" :search="search" item-key="name"
+              class="elevation-1">
+              <!-- TOP TITLE TABLE -->
+              <template v-slot:top>
+                <v-toolbar flat>
+                  <v-toolbar-title>Flash Sale</v-toolbar-title>
+                  <v-divider class="mx-4" inset vertical></v-divider>
+                  <v-spacer></v-spacer>
+                  <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details>
+                  </v-text-field>
+                  <v-spacer></v-spacer>
+                  <v-dialog v-model="dialog" max-width="500px">
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn color="primary" dark class="mb-2" v-bind="attrs" v-on="on">
+                        New Item
+                      </v-btn>
+                    </template>
+                    <v-card>
+                      <v-card-title>
+                        <span class="text-h5">{{ formTitle }}</span>
+                      </v-card-title>
+
+                      <v-card-text>
+                        <v-container>
+                          <v-row>
+                            <v-col cols="12" sm="12" md="12">
+                              <v-text-field v-model="editedItem.name" label="flashsale name">
+                              </v-text-field>
+                            </v-col>
+                            <v-col class="d-flex" cols="12" sm="12">
+                              <v-select v-model="editedItem.type" :items="itemsOption" label="type"></v-select>
+                            </v-col>
+
+                            <v-col cols="12" sm="12" md="12">
+                              <v-menu v-model="start_date" :close-on-content-click="false" :nudge-right="40"
+                                transition="scale-transition" offset-y min-width="auto">
+                                <template v-slot:activator="{ on, attrs }">
+                                  <v-text-field v-model="editedItem.start_date" label="start date"
+                                    prepend-icon="mdi-calendar" readonly v-bind="attrs" v-on="on"></v-text-field>
+                                </template>
+                                <v-date-picker v-model="editedItem.start_date" @input="start_date = false">
+                                </v-date-picker>
+                              </v-menu>
+
+                            </v-col>
+                            <v-col cols="12" sm="12" md="12">
+                              <v-menu ref="menu" v-model="menu_start_time" :close-on-content-click="false"
+                                :nudge-right="40" :return-value.sync="menu_start_time" transition="scale-transition"
+                                offset-y max-width="290px" min-width="290px">
+                                <template v-slot:activator="{ on, attrs }">
+                                  <v-text-field v-model="editedItem.start_time" label="start time"
+                                    prepend-icon="mdi-clock-time-four-outline" readonly v-bind="attrs" v-on="on">
+                                  </v-text-field>
+                                </template>
+                                <v-time-picker format="24hr" v-if="menu_start_time" v-model="editedItem.start_time"
+                                  full-width v-on:click:minute="$refs.menu.save(editedItem.start_time)"></v-time-picker>
+                              </v-menu>
+                            </v-col>
+                            <v-col v-if="editedItem.type =='webhunt'" cols="12" sm="12" md="12">
+                              <v-menu v-model="end_date" :close-on-content-click="false" :nudge-right="40"
+                                transition="scale-transition" offset-y min-width="auto">
+                                <template v-slot:activator="{ on, attrs }">
+                                  <v-text-field v-model="editedItem.end_date" label="end date"
+                                    prepend-icon="mdi-calendar" readonly v-bind="attrs" v-on="on"></v-text-field>
+                                </template>
+                                <v-date-picker v-model="editedItem.end_date" @input="start_date = false">
+                                </v-date-picker>
+                              </v-menu>
+                            </v-col>
+                            <v-col cols="12" sm="12" md="12">
+                              <v-menu ref="menu" v-model="menu_end_time" :close-on-content-click="false"
+                                :nudge-right="40" :return-value.sync="menu_end_time" transition="scale-transition"
+                                offset-y max-width="290px" min-width="290px">
+                                <template v-slot:activator="{ on, attrs }">
+                                  <v-text-field v-model="editedItem.end_time" label="end time"
+                                    prepend-icon="mdi-clock-time-four-outline" readonly v-bind="attrs" v-on="on">
+                                  </v-text-field>
+                                </template>
+                                <v-time-picker format="24hr" v-if="menu_end_time" v-model="editedItem.end_time"
+                                  full-width v-on:click:minute="$refs.menu.save(editedItem.end_time)"></v-time-picker>
+                              </v-menu>
+                            </v-col>
+
+                            <v-col cols="12" sm="12" md="12">
+                              <v-btn v-if="editedItem._id" color="blue darken-1" text
+                                v-on:click="dialog_product = !dialog_product">
+                                manage product
+                              </v-btn>
+                            </v-col>
+                          </v-row>
+                        </v-container>
+                      </v-card-text>
+
+                      <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn color="blue darken-1" text v-on:click="close">
+                          Cancel
+                        </v-btn>
+                        <v-btn :disabled="!(editedItem.start_time &&
+                        editedItem.end_time &&
+                        editedItem.name &&
+                        editedItem.type &&
+                                                 editedItem.start_date 
+                    )" color="blue darken-1" text v-on:click="save">
+                          Save
+                        </v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+                  <v-dialog v-model="dialogDelete" max-width="500px">
+                    <v-card>
+                      <v-card-title class="text-h5">Are you sure you want to delete this item?</v-card-title>
+                      <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn color="blue darken-1" text v-on:click="closeDelete">Cancel</v-btn>
+                        <v-btn color="blue darken-1" text v-on:click="deleteItemConfirm">OK</v-btn>
+                        <v-spacer></v-spacer>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+                  <v-dialog v-model="dialog_product" fullscreen hide-overlay>
+                    <v-card>
+                      <v-card-title class="text-h5">Manage Product {{editedItem.name ? editedItem.name : ''}}
+                      </v-card-title>
+                      <v-card-text>
+                        <v-row>
+                          <v-col cols="12" sm="7" md="7">
+                            <v-row>
+                              <v-col v-for="(i, index) in child_level" :key="index" id="category_setter" cols="3"
+                                md="3">
+                                <v-autocomplete color="blue" label="Choose Category" v-model="category[index]"
+                                  :loading="loadingCategoryAutocomplete" :items="itemsCategory[index]"
+                                  v-on:change="SyncCategory(category[index],index)" item-text="name" item-value="id"
+                                  color="black" append-icon="fa-angle-down" clear-icon="fa-times" clearable
+                                  return-object />
+                              </v-col>
+                            </v-row>
+                            <v-row v-if="showTableProduct">
+                              <v-col cols="12" md="12">
+                                <v-text-field v-model="searchProduct" append-icon="mdi-magnify" label="Search"
+                                  single-line hide-details></v-text-field>
+                                <v-data-table :loading="isLoadingProduct" loading-text="preparing products..."
+                                  v-model="product" :search="searchProduct" :headers="headersProduct"
+                                  :items="itemsProduct" item-key="ids" class="elevation-1">
+                                  <v-progress-linear v-show="isLoadingProduct" slot="progress" color="black" absolute
+                                    indeterminate>
+                                  </v-progress-linear>
+
+                                  <template v-slot:item.actions="{ item }">
+                                    <v-icon v-on:click="AddShop(item)">fas fa-plus</v-icon>
+                                  </template>
+                                  <template v-slot:item.qty="{ item }">
+                                    <v-text-field color="black"
+                                      :class="{invalid:buy_qty[item.ids] < 1 || buy_qty[item.ids] > item.stock}"
+                                      style="width: 100px;text-align:center;" v-model="buy_qty[item.ids]" type="number">
+                                    </v-text-field>
+                                  </template>
+                                  <template v-slot:item.sale_price="{ item }">
+                                    <v-text-field color="black" style="width: 100px;text-align:center;"
+                                      v-model="sale_price[item.ids]" type="number">
+                                    </v-text-field>
+                                  </template>
+
+
+                                </v-data-table>
+
+                              </v-col>
+                            </v-row>
+
+                            </v-select>
+
+                          </v-col>
+                          <v-col cols="12" sm="5" md="5">
+                            <v-card>
+                              <v-card-title class="text-h5">List {{editedItem.name ? editedItem.name : ''}} product
+                              </v-card-title>
+                              <v-card-text>
+                                <v-row>
+                                  <v-col v-if="!is_loading_cart" cols="12" sm="12" md="12">
+                                    <p v-if="sale_product.length == 0" class="text-center">product not set</p>
+                                    <v-simple-table v-if="sale_product.length >0">
+                                      <template v-slot:default>
+                                        <thead>
+                                          <tr>
+                                            <th class="text-left">
+                                              Name
+                                            </th>
+
+                                            <th class="text-left">
+                                              Variant
+                                            </th>
+                                            <th class="text-left">
+                                              Sale Price
+                                            </th>
+                                            <th class="text-left">
+                                              Qty
+                                            </th>
+
+                                            <th class="text-left">
+                                              Action </th>
+
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          <tr v-for="item in sale_product" :key="item.name">
+                                            <td>{{ item.name }}</td>
+                                            <td>{{ item.variant_String }}</td>
+                                            <td>{{ item.price }}</td>
+                                            <td>{{ item.qty }}</td>
+
+                                            <td>
+                                              <v-icon v-on:click="removeCart(item)" small>
+                                                fa-trash
+                                              </v-icon>
+                                            </td>
+
+                                          </tr>
+                                        </tbody>
+                                      </template>
+                                    </v-simple-table>
+                                  </v-col>
+                                  <v-col v-else cols="12" sm="12" md="12">
+                                    <p class="mt-5 text-center">Loading data..</p>
+                                  </v-col>
+
+                                </v-row>
+
+                              </v-card-text>
+
+                              <!-- <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn color="blue darken-1" text @click="dialog_product = !dialog_product">back</v-btn>
+                                <v-spacer></v-spacer>
+                              </v-card-actions> -->
+                            </v-card>
+                          </v-col>
+                        </v-row>
+
+                      </v-card-text>
+
+                      <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn color="blue darken-1" text v-on:click="dialog_product = !dialog_product">back
+                        </v-btn>
+                        <v-spacer></v-spacer>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+                </v-toolbar>
+              </template>
+
+              <template v-slot:item.actions="{ item }">
+                <v-icon small class="mr-2" v-on:click="editItem(item)">
+                  mdi-pencil
+                </v-icon>
+                <v-icon small v-on:click="deleteItem(item)">
+                  mdi-delete
+                </v-icon>
+              </template>
+
+              <!-- EMPTY DATA -->
+              <template v-slot:no-data>
+                No Data
+              </template>
+            </v-data-table>
+          </template>
+          <v-snackbar :timeout="2000" :value="true" absolute top :color="snackbar.type" outlined right
+            v-model="snackbar.show">
+            {{ snackbar.msg }}
+            <template v-slot:action="{ attrs }">
+              <v-btn :color="snackbar.type" text v-bind="attrs" v-on:click="snackbar.show = false">
+                Close
+              </v-btn>
+            </template>
+          </v-snackbar>
+        </v-card>
+
+
+        <!-- dialog product -->
+
+      </v-container>
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      vuetify: new Vuetify(),
+      data() {
+        return {
+          // url_server: `http://localhost:8888`,
+          url_server: `https://api.fmplaces.com`,
+          webstore_url: 'http://cors-anywhere.herokuapp.com/https://manualorder.azurewebsites.net/',
+          search: '',
+          selected: [],
+          dialog_product: false,
+          snackbar: {
+            show: false,
+            msg: '',
+            type: ''
+          },
+          itemsOption: [{ text: 'Web Hunt', value: 'webhunt' }, { text: 'Flash sale', value: 'flashsale' }],
+
+          msg: '',
+          cd: new Date,
+          menu_start_time: false,
+          menu_start: false,
+          menu_end_time: false,
+          start_date: false,
+          end_date: false,
+          btn_submit: true,
+
+          disabledDates: () => {
+            return new Date(Date.now() - 8640000)
+          },
+          loadingTable: false,
+          loadingCategoryAutocomplete: false,
+          child_level: 1,
+          final_category: '',
+          sale_price: [],
+
+          dialog: false,
+          products: [],
+          product: [],
+          sale_product: [],
+          itemsCategory: [],
+          category: [],
+          all_category: [],
+          searchProduct: '',
+          dialogDelete: false,
+          showTableProduct: false,
+          isLoadingProduct: false,
+          itemsProduct: [],
+          headersProduct: [],
+          headers: [],
+          buy_qty: [],
+          desserts: [],
+          editedIndex: -1,
+          is_loading_cart: false,
+
+          editedItem: {
+            date: null,
+            start_time: null,
+            end_time: null,
+            name: null,
+            type: null,
+            products: [],
+            start_date: null,
+            end_date: null
+          },
+          defaultItem: {
+            name: '',
+            calories: 0,
+            fat: 0,
+            carbs: 0,
+            protein: 0,
+          },
+        }
+      },
+      computed: {
+        formTitle() {
+          return this.editedIndex === -1 ? 'New Item' : 'Edit Item'
+        },
+      },
+      watch: {
+        dialog(val) {
+          val || this.close()
+        },
+        dialogDelete(val) {
+          val || this.closeDelete()
+        },
+
+      },
+
+      async created() {
+        this.loadingTable = true
+        this.initialize();
+        // console.log(await this.GetProduct(4))
+        await this.GetCategory()
+      },
+
+      methods: {
+        async fetchApi(path, method, body, type) {
+          let url = (type == 'webstore') ? this.webstore_url : this.url_server
+          let dataset = await fetch(`${url + path}`, {
+            method, headers: {
+              'Content-Type': 'application/json',
+            }, body: body ? JSON.stringify(body) : null
+          })
+            .then(res => {
+              return res.json()
+            }).then(data => {
+              return data
+            })
+            .catch(err => {
+              console.log(err)
+              this.snackbar = {
+                show: true,
+                msg: 'failed get data from server',
+                type: 'red'
+              }
+              return { success: false, msg: 'failed get data from server' }
+            })
+          return dataset
+        },
+        async AddShop(item) {
+          let data_product = {
+            name: item.name, variant_String: item.variant, flashsale_id: this.editedItem._id, product_id: item.product_id, variant: item.variant_id ? item.variant_id : [], variant_type_id: item.variant_type_id ? item.variant_type_id : [], qty: parseInt(this.buy_qty[item.ids]), price: parseInt(this.sale_price[item.ids] ? this.sale_price[item.ids] : 0)
+          }
+
+          let endpoint = '/api/flash-sale/product'
+          let add = await this.fetchApi(endpoint, 'PUT', data_product)
+          await this.cartRefresh(this.editedItem._id)
+          if (add.success) {
+            this.snackbar = {
+              show: true,
+              msg: 'add product success',
+              type: 'success'
+            }
+          } else {
+            this.snackbar = {
+              show: true,
+              msg: add.message,
+              type: 'red'
+            }
+          }
+        },
+        formatRupiah(angka, prefix) {
+          var number_string = angka.replace(/[^,\d]/g, '').toString(),
+            split = number_string.split(','),
+            sisa = split[0].length % 3,
+            rupiah = split[0].substr(0, sisa),
+            ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+          // tambahkan titik jika yang di input sudah menjadi angka ribuan
+          if (ribuan) {
+            separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+          }
+          rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+          return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+        },
+        async GetCategory() {
+          this.loadingCategoryAutocomplete = true
+          let get_category = await this.fetchApi('admin/manualorder/GetCategories', 'POST', null, "webstore")
+          if (get_category) {
+            if (get_category.Data) {
+              this.all_category = get_category.Data
+              let makeCategory = get_category.Data.filter(el => el.ParentCategoryId == 0)
+              let fixed_category = makeCategory.map(el => { return { name: el.Name, id: el.Id } })
+              this.itemsCategory[0] = fixed_category
+              this.loadingCategoryAutocomplete = false;
+            }
+          }
+          if (get_category.ok == false) {
+            this.loadingCategoryAutocomplete = false;
+
+            this.snackbar = {
+              show: true,
+              msg: 'get category failed',
+              type: 'red'
+            }
+
+          }
+
+        },
+
+        SyncCategory(data, index) {
+          this.child_level = index + 1
+          if (data) {
+            this.final_category = data.id
+            if (data.id) {
+              let get_child = this.all_category.filter(el => el.ParentCategoryId == data.id)
+
+              if (get_child.length > 0) {
+                this.showTableProduct = false
+
+                let category = this.category.splice(0, index + 1);
+                this.category = category
+                this.itemsCategory[index + 1] = get_child.map(el => { return { name: el.Name, id: el.Id } })
+                this.child_level++
+              } else {
+
+                this.GetProduct(this.final_category);
+
+              }
+            }
+          }
+        },
+
+        async initialize() {
+          let response = await this.fetchApi('/api/flash-sale', `get`);
+          if (response.status == 200) {
+            this.desserts = response.data;
+            this.headers = response.fields;
+          }
+          this.loadingTable = false
+        },
+
+        editItem(item) {
+          try {
+            this.editedIndex = this.desserts.indexOf(item)
+            this.editedItem = Object.assign({}, item)
+            this.buy_qty = []
+            this.sale_price = []
+            this.itemsProduct = []
+            this.headersProduct = []
+            this.sale_product = item.products
+            // this.editedItem.start_date = new Date(item.start_date).toISOString().substr(0, 10)
+            this.dialog = true
+            if (item.start_date) {
+              let local_date = new Date(item.start_date).toLocaleDateString()
+              local_date = local_date.split('/')
+              let day = local_date[0]
+              let month = local_date[1]
+              let year = local_date[2]
+              if (month < 10) {
+                month = '0' + month
+              }
+              this.editedItem.start_date = year + '-' + month + '-' + day
+            }
+          } catch (error) {
+            this.snackbar = {
+              show: true,
+              msg: 'something went wrong,please contact dev',
+              type: 'red'
+            }
+          }
+
+        },
+
+        async GetProduct(id_cat) {
+          this.showTableProduct = true
+          this.isLoadingProduct = true
+          let get_product = await this.fetchApi('admin/manualorder/GetProducts?categoryid=' + id_cat, 'POST', null, "webstore")
+          this.buy_qty = []
+          this.sale_price = []
+          this.itemsProduct = []
+          this.headersProduct = []
+          let product = []
+          let iterator = 0
+          let itr = 0
+
+          if (get_product) {
+            for (let j = 0; j < get_product.length; j++) {
+              if (get_product[j].variant_types.length > 0) {
+                for (let i = 0; i < get_product[j].variants.length; i++) {
+                  let product_var = get_product[j].variants[i].description.split('[')
+                  let price = parseInt(get_product[j].Price)
+                  let weight = parseInt(get_product[j].Weight)
+                  if (product_var[1]) {
+                    let tes = product_var[1].replace("+IDR", "")
+                    let pricecomma = tes.replace("]", "")
+                    let priceadd = pricecomma.replace(",", "")
+                    price = price + parseInt(priceadd.replace(" ", ""))
+                  }
+                  let obj_product = {
+                    name: get_product[j].Name,
+                    sku: get_product[j].SKU ? get_product[j].SKU : '-',
+                    ids: iterator,
+                    variant: product_var[0].replaceAll('<br />', ' | '),
+                    stock: get_product[j].variants[i].stock,
+                    weight: get_product[j].variants[i].weight,
+                    WeightUnit: get_product[j].WeightUnit,
+                    price: get_product[j].variants[i].price,
+                    product_id: get_product[j].ProductId,
+                    variant_id: get_product[j].variants[i].id_variants
+                  }
+                  let arr_variant_type = []
+                  for (let x = 0; x < get_product[j].variant_types.length; x++) {
+                    arr_variant_type.push(get_product[j].variant_types[x].Id)
+                  }
+
+                  obj_product['variant_type_id'] = arr_variant_type
+                  product.push(obj_product)
+                  this.buy_qty[iterator] = 0
+                  this.sale_price[iterator] = 0
+
+                  iterator++
+                }
+              } else {
+                product.push({
+                  name: get_product[j].Name,
+                  sku: get_product[j].SKU ? get_product[j].SKU : '-',
+                  variant: 'no variant',
+                  ids: iterator,
+                  WeightUnit: get_product[j].WeightUnit,
+                  product_id: get_product[j].ProductId,
+                  stock: get_product[j].Quantity,
+                  weight: parseFloat(get_product[j].Weight),
+                  price: parseInt(get_product[j].Price)
+                })
+                this.sale_price[iterator] = 0
+
+                this.buy_qty[iterator] = 0
+
+                iterator++
+
+
+              }
+            }
+
+
+            this.headersProduct.push(
+              {
+                text: 'SKU',
+                align: 'start',
+                value: 'sku',
+              },
+              {
+                text: 'Name',
+                value: 'name',
+              },
+              { text: 'Quantity', value: 'stock' },
+              { text: 'Variant', value: 'variant' },
+              { text: 'Normal Price', value: 'price' },
+              { text: 'Sale Price', value: 'sale_price' },
+              { text: 'Sale qty', value: 'qty' },
+
+              { text: "Actions", value: "actions" }
+
+
+
+            );
+            this.isLoadingProduct = false
+            this.itemsProduct = product
+          }
+
+        },
+        deleteItem(item) {
+          this.editedIndex = this.desserts.indexOf(item)
+          this.editedItem = Object.assign({}, item)
+          this.dialogDelete = true
+
+        },
+
+        async deleteItemConfirm() {
+          // this.desserts.splice(this.editedIndex, 1)
+          try {
+            let id = this.desserts[this.editedIndex]
+            let response = await this.fetchApi('/api/flash-sale/delete_item?_id=' + id._id, `delete`);
+            if (response.success) {
+              this.snackbar = {
+                show: true,
+                msg: 'success delete flashsale',
+                type: 'success'
+              }
+            } else {
+              this.snackbar = {
+                show: false,
+                msg: 'delete flashsale failed',
+                type: 'danger'
+              }
+            }
+            this.initialize()
+            this.closeDelete()
+          } catch (error) {
+            this.snackbar = {
+              show: false,
+              msg: 'try again later',
+              type: 'danger'
+            }
+          }
+
+        },
+        async cartRefresh(flashsale_id) {
+          this.is_loading_cart = true
+          let endpoint = '/api/flash-sale/' + flashsale_id
+          let get_category = await this.fetchApi(endpoint, 'GET', null)
+          if (get_category.success) {
+            this.sale_product = get_category.data.products
+            this.is_loading_cart = false
+
+          } else {
+            this.snackbar = {
+              show: true,
+              msg: 'failed sycronize products,please refresh',
+              type: 'red'
+            }
+            this.is_loading_cart = false
+
+          }
+        },
+        close() {
+          this.dialog = false
+          this.sale_product = []
+
+          this.$nextTick(() => {
+            this.editedItem = Object.assign({}, this.defaultItem)
+            this.editedIndex = -1
+          })
+        },
+
+        closeDelete() {
+          this.dialogDelete = false
+          this.$nextTick(() => {
+            this.editedItem = Object.assign({}, this.defaultItem)
+            this.editedIndex = -1
+          })
+        },
+        async removeCart(item) {
+          this.is_loading_cart = true
+          let data_product = {
+            flashsale_id: this.editedItem._id, product_id: item.product_id, variant: item.variant_id ? item.variant_id : [], variant_type_id: item.variant_type_id ? item.variant_type_id : []
+          }
+          let endpoint = '/api/flash-sale/product'
+          let add = await this.fetchApi(endpoint, 'DELETE', data_product)
+          if (add.success) {
+            this.snackbar = {
+              show: true,
+              msg: 'delete product success',
+              type: 'success'
+            }
+            this.cartRefresh(this.editedItem._id)
+            console.log(this.editedItem)
+          } else {
+            this.is_loading_cart = false
+
+            this.snackbar = {
+              show: true,
+              msg: 'delete product failed',
+              type: 'red'
+            }
+          }
+        },
+        async save() {
+
+          try {
+            let data = { ...this.editedItem }
+            if (data.type == 'flashsale') {
+              data["end_date"] = data.start_date
+            }
+
+            let date_time_start = new Date(data.start_date.toString() + ' ' + data.start_time)
+            let date_time_end = new Date(data.end_date.toString() + ' ' + data.end_time)
+            data.start_date = date_time_start.toISOString()
+            data.end_date = date_time_end.toISOString()
+            let msg = this.editedIndex == -1 ? 'add' : 'update';
+            let response = this.editedIndex == -1 ? await this.fetchApi('/api/flash-sale/', `post`, data) : await this.fetchApi('/api/flash-sale/update_data?_id=' + data._id, `post`, data);
+            if (!response.ok) {
+              this.snackbar = {
+                show: true,
+                msg: msg + ' flashsale failed',
+                type: 'red'
+              }
+            }
+            if (response.success) {
+              this.snackbar = {
+                show: true,
+                msg: 'success ' + msg + ' new  flashsale',
+                type: 'success'
+              }
+            } else {
+              this.snackbar = {
+                show: true,
+                msg: response.message,
+                type: 'red'
+              }
+            }
+
+          } catch (error) {
+            console.log(error)
+            this.snackbar = {
+              show: false,
+              msg: 'try again later',
+              type: 'danger'
+            }
+          }
+
+          this.initialize()
+          this.close()
+        },
+      },
+    });
+    Vue.config.productionTip = false
+
+  </script>
+</body>
+
+</html>
