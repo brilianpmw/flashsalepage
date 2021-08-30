@@ -713,7 +713,10 @@
         close() {
           this.dialog = false
           this.sale_product = []
-
+          this.error_form = {
+            status: false,
+            msg: '',
+          }
           this.$nextTick(() => {
             this.editedItem = Object.assign({}, this.defaultItem)
             this.editedIndex = -1
