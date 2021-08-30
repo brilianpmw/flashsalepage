@@ -537,7 +537,7 @@
             // this.editedItem.start_date = new Date(item.start_date).toISOString().substr(0, 10)
             this.dialog = true
             if (item.start_date) {
-              let local_date = new Date(item.start_date).toLocaleDateString()
+              let local_date = new Date(item.start_date).toLocaleDateString("id-ID")
               local_date = local_date.split('/')
               let day = local_date[0]
               let month = local_date[1]
@@ -546,7 +546,9 @@
                 month = '0' + month
               }
 
-              this.editedItem.start_date = new Date(item.start_date).toLocaleDateString("fr-CA")
+              // this.editedItem.start_date = new Date(item.start_date).toLocaleDateString("fr-CA")
+              this.editedItem.start_date = year + "-" + month + "-" + day
+
             }
           } catch (error) {
             this.snackbar = {
