@@ -540,7 +540,8 @@
               if (month < 10) {
                 month = '0' + month
               }
-              this.editedItem.start_date = year + '-' + month + '-' + day
+
+              this.editedItem.start_date = new Date(year + '-' + month + '-' + day).toISOString().substr(0, 10)
             }
           } catch (error) {
             this.snackbar = {
