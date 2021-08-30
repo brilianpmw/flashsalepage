@@ -541,7 +541,7 @@
                 month = '0' + month
               }
 
-              this.editedItem.start_date = new Date(year + '-' + month + '-' + day).toISOString().substr(0, 10)
+              this.editedItem.start_date = new Date(item.start_date).toLocaleDateString("fr-CA")
             }
           } catch (error) {
             this.snackbar = {
