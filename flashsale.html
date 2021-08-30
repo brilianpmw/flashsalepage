@@ -40,6 +40,9 @@
                       <v-card-title>
                         <span class="text-h5">{{ formTitle }}</span>
                       </v-card-title>
+                      <v-alert v-if="error_form.status" class="mx-2" type="error">
+                        {{error_form.msg}}
+                      </v-alert>
 
                       <v-card-text>
                         <v-container>
@@ -139,13 +142,13 @@
                       </v-card-actions>
                     </v-card>
                   </v-dialog>
-                  <v-dialog v-model="dialog_product" fullscreen hide-overlay>
+                  <v-dialog v-model="dialog_product" persistent max-width="1000">
                     <v-card>
                       <v-card-title class="text-h5">Manage Product {{editedItem.name ? editedItem.name : ''}}
                       </v-card-title>
                       <v-card-text>
                         <v-row>
-                          <v-col cols="12" sm="7" md="7">
+                          <v-col cols="12" sm="12" md="12">
                             <v-row>
                               <v-col v-for="(i, index) in child_level" :key="index" id="category_setter" cols="3"
                                 md="3">
@@ -191,7 +194,7 @@
                             </v-select>
 
                           </v-col>
-                          <v-col cols="12" sm="5" md="5">
+                          <v-col cols="12" sm="12" md="12">
                             <v-card>
                               <v-card-title class="text-h5">List {{editedItem.name ? editedItem.name : ''}} product
                               </v-card-title>
@@ -256,7 +259,6 @@
                             </v-card>
                           </v-col>
                         </v-row>
-
                       </v-card-text>
 
                       <v-card-actions>
@@ -324,7 +326,10 @@
             type: ''
           },
           itemsOption: [{ text: 'Flash sale', value: 'flashsale' }],
-
+          error_form: {
+            status: false,
+            msg: ''
+          },
           msg: '',
           cd: new Date,
           menu_start_time: false,
@@ -757,6 +762,13 @@
 
             let date_time_start = new Date(data.start_date.toString() + ' ' + data.start_time)
             let date_time_end = new Date(data.end_date.toString() + ' ' + data.end_time)
+            if (date_time_start > date_time_end) {
+              this.error_form = {
+                status: true,
+                msg: 'date time start must be lower than date time end ',
+              }
+              return
+            }
             data.start_date = date_time_start.toISOString()
             data.end_date = date_time_end.toISOString()
             let msg = this.editedIndex == -1 ? 'add' : 'update';
