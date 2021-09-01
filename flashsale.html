@@ -316,7 +316,7 @@
         return {
           // url_server: `http://localhost:8888`,
           url_server: `https://api.fmplaces.com`,
-          webstore_url: 'http://cors-anywhere.herokuapp.com/https://manualorder.azurewebsites.net/',
+          webstore_url: 'http://cors-anywhere.herokuapp.com/http://beatrice.flitts.com/',
           search: '',
           selected: [],
           dialog_product: false,
@@ -470,7 +470,7 @@
         },
         async GetCategory() {
           this.loadingCategoryAutocomplete = true
-          let get_category = await this.fetchApi('admin/manualorder/GetCategories', 'POST', null, "webstore")
+          let get_category = await this.fetchApi('admin/flashsale/GetCategories', 'POST', null, "webstore")
           if (get_category) {
             if (get_category.Data) {
               this.all_category = get_category.Data
@@ -563,7 +563,7 @@
         async GetProduct(id_cat) {
           this.showTableProduct = true
           this.isLoadingProduct = true
-          let get_product = await this.fetchApi('admin/manualorder/GetProducts?categoryid=' + id_cat, 'POST', null, "webstore")
+          let get_product = await this.fetchApi('admin/flashsale/GetProducts?categoryid=' + id_cat, 'POST', null, "webstore")
           this.buy_qty = []
           this.sale_price = []
           this.itemsProduct = []
