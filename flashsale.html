@@ -316,7 +316,9 @@
         return {
           // url_server: `http://localhost:8888`,
           url_server: `https://api.fmplaces.com`,
-          webstore_url: 'http://cors-anywhere.herokuapp.com/http://beatrice.flitts.com/',
+          // webstore_url: 'http://cors-anywhere.herokuapp.com/http://beatrice.flitts.com/',
+          webstore_url: 'http://beatrice.flitts.com/',
+
           search: '',
           selected: [],
           dialog_product: false,
@@ -574,61 +576,62 @@
 
           if (get_product) {
             for (let j = 0; j < get_product.length; j++) {
-              if (get_product[j].variant_types.length > 0) {
-                for (let i = 0; i < get_product[j].variants.length; i++) {
-                  let product_var = get_product[j].variants[i].description.split('[')
-                  let price = parseInt(get_product[j].Price)
-                  let weight = parseInt(get_product[j].Weight)
-                  if (product_var[1]) {
-                    let tes = product_var[1].replace("+IDR", "")
-                    let pricecomma = tes.replace("]", "")
-                    let priceadd = pricecomma.replace(",", "")
-                    price = price + parseInt(priceadd.replace(" ", ""))
-                  }
-                  let obj_product = {
-                    name: get_product[j].Name,
-                    sku: get_product[j].SKU ? get_product[j].SKU : '-',
-                    ids: iterator,
-                    variant: product_var[0].replaceAll('<br />', ' | '),
-                    stock: get_product[j].variants[i].stock,
-                    weight: get_product[j].variants[i].weight,
-                    WeightUnit: get_product[j].WeightUnit,
-                    price: get_product[j].variants[i].price,
-                    product_id: get_product[j].ProductId,
-                    variant_id: get_product[j].variants[i].id_variants
-                  }
-                  let arr_variant_type = []
-                  for (let x = 0; x < get_product[j].variant_types.length; x++) {
-                    arr_variant_type.push(get_product[j].variant_types[x].Id)
-                  }
+              // if (get_product[j].variant_types.length > 0) {
+              //   for (let i = 0; i < get_product[j].variants.length; i++) {
+              //     let product_var = get_product[j].variants[i].description.split('[')
+              //     let price = parseInt(get_product[j].Price)
+              //     let weight = parseInt(get_product[j].Weight)
+              //     if (product_var[1]) {
+              //       let tes = product_var[1].replace("+IDR", "")
+              //       let pricecomma = tes.replace("]", "")
+              //       let priceadd = pricecomma.replace(",", "")
+              //       price = price + parseInt(priceadd.replace(" ", ""))
+              //     }
+              //     let obj_product = {
+              //       name: get_product[j].Name,
+              //       sku: get_product[j].SKU ? get_product[j].SKU : '-',
+              //       ids: iterator,
+              //       variant: product_var[0].replaceAll('<br />', ' | '),
+              //       stock: get_product[j].variants[i].stock,
+              //       weight: get_product[j].variants[i].weight,
+              //       WeightUnit: get_product[j].WeightUnit,
+              //       price: get_product[j].variants[i].price,
+              //       product_id: get_product[j].ProductId,
+              //       variant_id: get_product[j].variants[i].id_variants
+              //     }
+              //     let arr_variant_type = []
+              //     for (let x = 0; x < get_product[j].variant_types.length; x++) {
+              //       arr_variant_type.push(get_product[j].variant_types[x].Id)
+              //     }
 
-                  obj_product['variant_type_id'] = arr_variant_type
-                  product.push(obj_product)
-                  this.buy_qty[iterator] = 0
-                  this.sale_price[iterator] = 0
+              //     obj_product['variant_type_id'] = arr_variant_type
+              //     product.push(obj_product)
+              //     this.buy_qty[iterator] = 0
+              //     this.sale_price[iterator] = 0
 
-                  iterator++
-                }
-              } else {
-                product.push({
-                  name: get_product[j].Name,
-                  sku: get_product[j].SKU ? get_product[j].SKU : '-',
-                  variant: 'no variant',
-                  ids: iterator,
-                  WeightUnit: get_product[j].WeightUnit,
-                  product_id: get_product[j].ProductId,
-                  stock: get_product[j].Quantity,
-                  weight: parseFloat(get_product[j].Weight),
-                  price: parseInt(get_product[j].Price)
-                })
-                this.sale_price[iterator] = 0
+              //     iterator++
+              //   }
+              // } 
+              // else {
+              product.push({
+                name: get_product[j].Name,
+                sku: get_product[j].SKU ? get_product[j].SKU : '-',
+                variant: 'no variant',
+                ids: iterator,
+                WeightUnit: get_product[j].WeightUnit,
+                product_id: get_product[j].ProductId,
+                stock: get_product[j].Quantity,
+                weight: parseFloat(get_product[j].Weight),
+                price: parseInt(get_product[j].Price)
+              })
+              this.sale_price[iterator] = 0
 
-                this.buy_qty[iterator] = 0
+              this.buy_qty[iterator] = 0
 
-                iterator++
+              iterator++
 
 
-              }
+              // }
             }
 
 
