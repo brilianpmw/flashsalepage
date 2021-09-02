@@ -173,17 +173,27 @@
                                   <template v-slot:item.actions="{ item }">
                                     <v-icon v-on:click="AddShop(item)">fas fa-plus</v-icon>
                                   </template>
+                                  <template v-slot:item.sale_price="{ item }">
+                                    <v-text-field color="black" style="width: 100px;text-align:center;"
+                                      v-model="sale_price[item.ids]"
+                                      v-on:change="CountDiscount(event,sale_price[item.ids],item.price,item.ids)"
+                                      type="number">
+                                    </v-text-field>
+                                  </template>
+                                  <template v-slot:item.discount_price="{ item }">
+                                    <v-text-field color="black"
+                                      v-on:change="CountSalePrice(event,discount_price[item.ids],item.price,item.ids)"
+                                      style="width: 100px;text-align:center;" v-model="discount_price[item.ids]"
+                                      type="number">
+                                    </v-text-field>
+                                  </template>
                                   <template v-slot:item.qty="{ item }">
                                     <v-text-field color="black"
                                       :class="{invalid:buy_qty[item.ids] < 1 || buy_qty[item.ids] > item.stock}"
                                       style="width: 100px;text-align:center;" v-model="buy_qty[item.ids]" type="number">
                                     </v-text-field>
                                   </template>
-                                  <template v-slot:item.sale_price="{ item }">
-                                    <v-text-field color="black" style="width: 100px;text-align:center;"
-                                      v-model="sale_price[item.ids]" type="number">
-                                    </v-text-field>
-                                  </template>
+
 
 
                                 </v-data-table>
@@ -210,14 +220,15 @@
                                               Name
                                             </th>
 
-                                            <th class="text-left">
-                                              Variant
-                                            </th>
+
                                             <th class="text-left">
                                               Sale Price
                                             </th>
                                             <th class="text-left">
                                               Qty
+                                            </th>
+                                            <th class="text-left">
+                                              Discount(%)
                                             </th>
 
                                             <th class="text-left">
@@ -228,9 +239,9 @@
                                         <tbody>
                                           <tr v-for="item in sale_product" :key="item.name">
                                             <td>{{ item.name }}</td>
-                                            <td>{{ item.variant_String }}</td>
                                             <td>{{ item.price }}</td>
                                             <td>{{ item.qty }}</td>
+                                            <td>{{ item.discount }}%</td>
 
                                             <td>
                                               <v-icon v-on:click="removeCart(item)" small>
@@ -314,10 +325,10 @@
       vuetify: new Vuetify(),
       data() {
         return {
-          // url_server: `http://localhost:8888`,
-          url_server: `https://api.fmplaces.com`,
-          // webstore_url: 'http://cors-anywhere.herokuapp.com/http://beatrice.flitts.com/',
-          webstore_url: 'http://beatrice.flitts.com/',
+          url_server: `http://localhost:8888`,
+          // url_server: `https://api.fmplaces.com`,
+          webstore_url: 'http://cors-anywhere.herokuapp.com/http://beatrice.flitts.com/',
+          // webstore_url: 'http://beatrice.flitts.com/',
 
           search: '',
           selected: [],
@@ -366,6 +377,7 @@
           headers: [],
           buy_qty: [],
           desserts: [],
+          discount_price: [],
           editedIndex: -1,
           is_loading_cart: false,
 
@@ -411,6 +423,25 @@
       },
 
       methods: {
+        CountDiscount(e, disc, normal, index) {
+          if (!disc) return
+          this.discount_price[index] = 100 - ((parseInt(disc) / parseInt(normal)) * 100)
+          alert(100 - ((parseInt(disc) / parseInt(normal)) * 100))
+
+          this.$set(this.discount_price, index, parseInt(100 - ((parseInt(disc) / parseInt(normal)) * 100)))
+
+
+        },
+        CountSalePrice(e, disc, normal, index) {
+          // this.sale_price[index] = 
+          if (!disc) return
+          this.sale_price[index] = parseInt(normal) - ((parseInt(disc) / 100) * parseInt(normal))
+          this.$set(this.sale_price, index, parseInt(normal) - ((parseInt(disc) / 100) * parseInt(normal)))
+
+          // this.$set(this.sale_price, 0, 0)
+
+
+        },
         async fetchApi(path, method, body, type) {
           let url = (type == 'webstore') ? this.webstore_url : this.url_server
           let dataset = await fetch(`${url + path}`, {
@@ -436,8 +467,10 @@
         },
         async AddShop(item) {
           let data_product = {
-            name: item.name, variant_String: item.variant, flashsale_id: this.editedItem._id, product_id: item.product_id, variant: item.variant_id ? item.variant_id : [], variant_type_id: item.variant_type_id ? item.variant_type_id : [], qty: parseInt(this.buy_qty[item.ids]), price: parseInt(this.sale_price[item.ids] ? this.sale_price[item.ids] : 0)
+            name: item.name, variant_String: item.variant, flashsale_id: this.editedItem._id, product_id: item.product_id, variant: item.variant_id ? item.variant_id : [], variant_type_id: item.variant_type_id ? item.variant_type_id : [], qty: parseInt(this.buy_qty[item.ids]), price: parseInt(this.sale_price[item.ids] ? this.sale_price[item.ids] : 0), discount: parseInt(this.discount_price[item.ids] ? this.discount_price[item.ids] : 0)
+
           }
+
 
           let endpoint = '/api/flash-sale/product'
           let add = await this.fetchApi(endpoint, 'PUT', data_product)
@@ -522,6 +555,9 @@
           let response = await this.fetchApi('/api/flash-sale', `get`);
           if (response.status == 200) {
             this.desserts = response.data;
+            this.headers = response.fields;
+          } else if (response.status == 201) {
+            this.desserts = []
             this.headers = response.fields;
           }
           this.loadingTable = false
@@ -616,8 +652,9 @@
               product.push({
                 name: get_product[j].Name,
                 sku: get_product[j].SKU ? get_product[j].SKU : '-',
-                variant: 'no variant',
                 ids: iterator,
+                variant: 'no variant',
+
                 WeightUnit: get_product[j].WeightUnit,
                 product_id: get_product[j].ProductId,
                 stock: get_product[j].Quantity,
@@ -627,6 +664,8 @@
               this.sale_price[iterator] = 0
 
               this.buy_qty[iterator] = 0
+              this.discount_price[iterator] = 0
+
 
               iterator++
 
@@ -646,8 +685,9 @@
                 value: 'name',
               },
               { text: 'Quantity', value: 'stock' },
-              { text: 'Variant', value: 'variant' },
               { text: 'Normal Price', value: 'price' },
+              { text: 'discount (%)', value: 'discount_price' },
+
               { text: 'Sale Price', value: 'sale_price' },
               { text: 'Sale qty', value: 'qty' },
 
@@ -679,6 +719,7 @@
                 msg: 'success delete flashsale',
                 type: 'success'
               }
+
             } else {
               this.snackbar = {
                 show: false,
@@ -686,6 +727,7 @@
                 type: 'danger'
               }
             }
+
             this.initialize()
             this.closeDelete()
           } catch (error) {
